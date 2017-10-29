@@ -594,15 +594,15 @@ def _start_parser(path):
 
 #uses global variable "db" because of result.get()
 def run(medline_path, clean, start, end, PROCESSES):
-    con = 'postgresql://parser:parser@localhost/'+db
+    con = '{0}://{1}:{2}@{3}/{4}'.format(engine_str, username, password, host, db)
 
     if end != None:
         end = int(end)
 
     if clean:
-        PubMedDB.create_tables(db)
+        PubMedDB.create_tables(db, engine_str, username, password, host)
     
-    PubMedDB.init(db)
+    PubMedDB.init(db, engine_str, username, password, host)
 
     paths = []
     for root, dirs, files in os.walk(medline_path):
@@ -649,9 +649,25 @@ if __name__ == "__main__":
     parser.add_option("-d", "--database",
                       dest="database", default="pancreatic_cancer_db",
                       help="What is the name of the database. (Default: pancreatic_cancer_db)")
+    parser.add_option("--engine",
+                      dest="engine", default="mssql+pyodbc",
+                      help="What is the database engine. (Default: mssql+pyodbc)")
+    parser.add_option("--username",
+                      dest="username", default="username",
+                      help="What is the username. (Default: username)")
+    parser.add_option("--password",
+                      dest="password", default="password",
+                      help="What is the Password. (Default: password)")
+    parser.add_option("--host",
+                      dest="host", default="localhost",
+                      help="What is the database hostname . (Default: localhost)")
 
     (options, args) = parser.parse_args()
     db = options.database
+    engine_str = options.engine
+    username = options.username
+    password = options.password
+    host = options.host
     #log start time of programme:
     start = time.asctime()
     run(options.medline_path, options.clean, int(options.start), options.end, int(options.PROCESSES))

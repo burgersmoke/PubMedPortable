@@ -715,23 +715,32 @@ class SupplMeshName(Base):
 #    session.commit()
 #    session.close()
 
-def init(db):
+def create_connection_string(db, engine_str, username, password, host):
+    con = '{0}://{1}:{2}@{3}/{4}'.format(engine_str, username, password, host, db)
+    
+    if 'mssql' in engine_str:
+        con += '?driver=SQL+Server'
+    
+    print(con)
+    return con
+
+def init(db, engine_str, username, password, host):
     """
         initialize the database and return the db_engine and the Base-Class for further usage
         an already existing DB want be overridden, you still get the handle (engine) to the DB
     """
-    con = 'postgresql://parser:parser@localhost/'+db
+    con = create_connection_string(db, engine_str, username, password, host)
     engine = create_engine(con)
     Base.metadata.create_all(engine)
 
     return engine, Base
 
-def create_tables(db):
+def create_tables(db, engine_str, username, password, host):
     """
         reset the whole DB
     """
-    con = 'postgresql://parser:parser@localhost/'+db
-    engine, Base = init(db)
+    con = create_connection_string(db, engine_str, username, password, host)
+    engine, Base = init(db, engine_str, username, password, host)
     try:
         Base.metadata.drop_all(engine)
         Base.metadata.create_all(engine)
@@ -748,7 +757,19 @@ if __name__ == "__main__":
     parser.add_option("-d", "--database",
                       dest="database", default="pancreatic_cancer_db",
                       help="What is the name of the database. (Default: pancreatic_cancer_db)")
-
+    parser.add_option("--engine",
+                      dest="engine", default="mssql+pyodbc",
+                      help="What is the database engine. (Default: mssql+pyodbc)")
+    parser.add_option("--username",
+                      dest="username", default="username",
+                      help="What is the username. (Default: username)")
+    parser.add_option("--password",
+                      dest="password", default="password",
+                      help="What is the Password. (Default: password)")
+    parser.add_option("--host",
+                      dest="host", default="localhost",
+                      help="What is the database hostname . (Default: localhost)")
+    
     (options, args) = parser.parse_args()
-    init(options.database)
+    init(options.database, options.engine, options.username, options.password, options.host)
 
