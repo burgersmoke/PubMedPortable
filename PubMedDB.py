@@ -721,7 +721,7 @@ def create_connection_string(db, engine_str, username, password, host):
     if 'mssql' in engine_str:
         con += '?driver=SQL+Server'
     
-    print(con)
+    #print(con)
     return con
 
 def init(db, engine_str, username, password, host):
