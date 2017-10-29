@@ -35,10 +35,10 @@ month_code = {"Jan":"01","Feb":"02","Mar":"03","Apr":"04","May":"05","Jun":"06",
 
 class MedlineParser:
     #db is a global variable and given to MedlineParser(path,db) in _start_parser(path)
-    def __init__(self, filepath,db):
-        engine, Base = PubMedDB.init(db)
+    def __init__(self, map_object):
+        engine, Base = PubMedDB.init(map_object.db, map_object.engine_str, map_object.username, map_object.password, map_object.host)
         Session = sessionmaker(bind=engine)
-        self.filepath = filepath
+        self.filepath = map_object.file
         self.session = Session()
 
 
@@ -60,8 +60,12 @@ class MedlineParser:
         # turn it into an iterator
         context = iter(context)
 
-        # get the root element
-        event, root = context.next()
+        # different calls for Python 2 vs Python 3
+        if sys.version_info[0] < 3:
+            # get the root element
+            event, root = context.next()
+        elif sys.version_info[0] == 3:
+            event, root = next(context)
 
         DBCitation = PubMedDB.Citation()
         DBJournal = PubMedDB.Journal()
@@ -582,18 +586,26 @@ def get_memory_usage(pid=os.getpid(), format="%mem"):
     return float(os.popen('ps -p %d -o %s | tail -1' %
                         (pid, format)).read().strip())
 
+class ParserMap:
+    def __init__(self, file, db, engine_str, username, password, host):
+        self.file = file
+        self.db = db
+        self.engine_str = engine_str
+        self.username = username
+        self.password = password
+        self.host = host
 
-def _start_parser(path):
+def _start_parser(map_object):
     """
         Used to start MultiProcessor Parsing
     """
-    print('{0}\tpid:{1}'.format(path, os.getpid()))
-    p = MedlineParser(path,db)
+    print('{0}\tpid:{1}'.format(map_object.file, os.getpid()))
+    p = MedlineParser(map_object)
     s = p._parse()
-    return path
+    return map_object.file
 
 #uses global variable "db" because of result.get()
-def run(medline_path, clean, start, end, PROCESSES):
+def run(medline_path, clean, start, end, PROCESSES, engine_str, username, password, host, db):
     con = PubMedDB.create_connection_string(engine_str, username, password, host, db)
 
     if end != None:
@@ -607,16 +619,23 @@ def run(medline_path, clean, start, end, PROCESSES):
     paths = []
     for root, dirs, files in os.walk(medline_path):
         for filename in files:
-            if os.path.splitext(filename)[-1] in [".xml", ".gz"]:
+            if os.path.splitext(filename)[-1] in [".nxml", ".xml", ".gz"]:
                 paths.append(os.path.join(root,filename))
 
     paths.sort()
     
+    print('About to start processing a total of {0} documents'.format(len(paths)))
 
     pool = Pool(processes=PROCESSES)    # start with processors
     print("Initialized with {0} processes".format(PROCESSES))
     #result.get() needs global variable db now - that is why a line "db = options.database" is added in "__main__" - the variable db cannot be given to __start_parser in map_async()
-    result = pool.map_async(_start_parser, paths[start:end])
+    
+    map_objects = []
+    for path in paths[start:end]:
+        map_obj = ParserMap(path, db, engine_str, username, password, host)
+        map_objects.append(map_obj)
+    
+    result = pool.map_async(_start_parser, map_objects)
     res = result.get()
     #without multiprocessing:
     #for path in paths:
@@ -670,7 +689,8 @@ if __name__ == "__main__":
     host = options.host
     #log start time of programme:
     start = time.asctime()
-    run(options.medline_path, options.clean, int(options.start), options.end, int(options.PROCESSES))
+    run(options.medline_path, options.clean, int(options.start), options.end, int(options.PROCESSES),
+        options.engine, options.username, options.password, options.host, options.database)
     #end time programme 
     end = time.asctime()
 
