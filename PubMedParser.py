@@ -594,7 +594,7 @@ def _start_parser(path):
 
 #uses global variable "db" because of result.get()
 def run(medline_path, clean, start, end, PROCESSES):
-    con = '{0}://{1}:{2}@{3}/{4}'.format(engine_str, username, password, host, db)
+    con = PubMedDB.create_connection_string(engine_str, username, password, host, db)
 
     if end != None:
         end = int(end)
