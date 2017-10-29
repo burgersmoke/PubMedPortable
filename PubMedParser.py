@@ -113,7 +113,7 @@ class MedlineParser:
                         # Manually deleting entries is possible (with PGAdmin3 or via command-line), e.g.:
                         # DELETE FROM pubmed.tbl_medline_citation WHERE pmid = 25005691;
                         if same_pmid:
-                            print "Article already in database - " + str(same_pmid[0]) + "Continuing with next PubMed-ID"
+                            print("Article already in database - {0} Continuing with next PubMed-ID".format(str(same_pmid[0])))
                             DBCitation = PubMedDB.Citation()
                             DBJournal = PubMedDB.Journal()
                             elem.clear()
@@ -195,7 +195,7 @@ class MedlineParser:
                             temp_year = DBJournal.medline_date[0:4]
                             DBJournal.pub_date_year = temp_year
                         except:
-                            print _file, " not able to cast first 4 letters of medline_date ", temp_year
+                            print("{0} not able to cast first 4 letters of medline_date {1}".format(_file, temp_year))
                 
                 
                 #if there is the attribute ArticleDate, month and day are given
@@ -587,7 +587,7 @@ def _start_parser(path):
     """
         Used to start MultiProcessor Parsing
     """
-    print path, '\tpid:', os.getpid()
+    print('{0}\tpid:{1}'.format(path, os.getpid()))
     p = MedlineParser(path,db)
     s = p._parse()
     return path
@@ -614,7 +614,7 @@ def run(medline_path, clean, start, end, PROCESSES):
     
 
     pool = Pool(processes=PROCESSES)    # start with processors
-    print "Initialized with ", PROCESSES, "processes"
+    print("Initialized with {0} processes".format(PROCESSES))
     #result.get() needs global variable db now - that is why a line "db = options.database" is added in "__main__" - the variable db cannot be given to __start_parser in map_async()
     result = pool.map_async(_start_parser, paths[start:end])
     res = result.get()
@@ -622,9 +622,9 @@ def run(medline_path, clean, start, end, PROCESSES):
     #for path in paths:
     #    _start_parser(path)
 
-    print "######################"
-    print "###### Finished ######"
-    print "######################"
+    print("######################")
+    print("###### Finished ######")
+    print("######################")
 
 
 if __name__ == "__main__":
@@ -658,5 +658,5 @@ if __name__ == "__main__":
     #end time programme 
     end = time.asctime()
 
-    print "programme started - " + start
-    print "programme ended - " + end
+    print("programme started - " + start)
+    print("programme ended - " + end)

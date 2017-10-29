@@ -737,7 +737,7 @@ def create_tables(db):
         Base.metadata.create_all(engine)
 
     except:
-        print "Can't create table"
+        print("Can't create table")
         raise
 
 
